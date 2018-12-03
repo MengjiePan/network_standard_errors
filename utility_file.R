@@ -68,6 +68,8 @@ node.set <- function(g,nodeSetExch)
   nodes.6=nodeSetExch[[6]]
   
   K=max(g)
+  n=length(g)
+  last_nodes_len=(n-1)*(n-2)/2
   nodes.1.list=list()
   for (i in 1:K){
     for (j in 1:K){
@@ -92,48 +94,38 @@ node.set <- function(g,nodeSetExch)
   }
   
   nodes.3.list=list()
-  for (i in 1:K){
-    for (j in 1:K){
-      for (k in j:K){
-        if(j==k){nodes.3.list=c(nodes.3.list,list(nodes.3[which(g[nodes.3[,1]]==i & g[nodes.3[,2]]==j & g[nodes.3[,4]]==k),]))}
-        else{
-          nodes.3.list=c(nodes.3.list,list(rbind(nodes.3[which(g[nodes.3[,1]]==i & g[nodes.3[,2]]==j & g[nodes.3[,4]]==k),],
-                                                 nodes.3[which(g[nodes.3[,1]]==i & g[nodes.3[,2]]==k & g[nodes.3[,4]]==j),])))}
-      }
-    }
-  }
-  
   nodes.4.list=list()
-  for (i in 1:K){
-    for (j in 1:K){
-      for (k in j:K){
-        if(j==k){nodes.4.list=c(nodes.4.list,list(nodes.4[which(g[nodes.4[,2]]==i & g[nodes.4[,1]]==j & g[nodes.4[,3]]==k),]))}
-        else{
-          nodes.4.list=c(nodes.4.list,list(rbind(nodes.4[which(g[nodes.4[,2]]==i & g[nodes.4[,1]]==j & g[nodes.4[,3]]==k),],
-                                                 nodes.4[which(g[nodes.4[,2]]==i & g[nodes.4[,1]]==k & g[nodes.4[,3]]==j),])))}
-      }
-    }
-  }
-  
   nodes.5.list=list()
   for (i in 1:K){
+    sub_i=c(sapply(which(g==i),FUN=function(ind){((ind-1)*last_nodes_len+1):(ind*last_nodes_len)}))
+    nodes.3_sub=nodes.3[sub_i,]
+    nodes.4_sub=nodes.4[sub_i,]
+    nodes.5_sub=nodes.5[sub_i,]
+    nodes.6_sub=nodes.6[sub_i,]
     for (j in 1:K){
       for (k in j:K){
         if(j==k){
-          nodes.5.list=c(nodes.5.list,list(rbind(nodes.5[which(g[nodes.5[,1]]==i & g[nodes.5[,2]]==j & g[nodes.5[,3]]==k),],
-                                                 nodes.6[which(g[nodes.6[,2]]==i & g[nodes.6[,1]]==j & g[nodes.6[,4]]==k),])))          
-        }else{
-          nodes.5.list=c(nodes.5.list,list(rbind(nodes.5[which(g[nodes.5[,1]]==i & g[nodes.5[,2]]==j & g[nodes.5[,3]]==k),],
-                                                 nodes.5[which(g[nodes.5[,1]]==i & g[nodes.5[,2]]==k & g[nodes.5[,3]]==j),],
-                                                 nodes.6[which(g[nodes.6[,2]]==i & g[nodes.6[,1]]==j & g[nodes.6[,4]]==k),],
-                                                 nodes.6[which(g[nodes.6[,2]]==i & g[nodes.6[,1]]==k & g[nodes.6[,4]]==j),])))}
+          nodes.3.list=c(nodes.3.list,list(nodes.3_sub[which( g[nodes.3_sub[,2]]==j & g[nodes.3_sub[,4]]==k),]))
+          nodes.4.list=c(nodes.4.list,list(nodes.4_sub[which(g[nodes.4_sub[,1]]==j & g[nodes.4_sub[,3]]==k),]))
+          nodes.5.list=c(nodes.5.list,list(rbind(nodes.5_sub[which( g[nodes.5_sub[,2]]==j & g[nodes.5_sub[,3]]==k),],
+                                                 nodes.6_sub[which( g[nodes.6_sub[,1]]==j & g[nodes.6_sub[,4]]==k),])))          
+        }
+        else{
+          nodes.3.list=c(nodes.3.list,list(rbind(nodes.3_sub[which( g[nodes.3_sub[,2]]==j & g[nodes.3_sub[,4]]==k),],
+                                                 nodes.3_sub[which(g[nodes.3_sub[,2]]==k & g[nodes.3_sub[,4]]==j),])))
+          nodes.4.list=c(nodes.4.list,list(rbind(nodes.4_sub[which( g[nodes.4_sub[,1]]==j & g[nodes.4_sub[,3]]==k),],
+                                                 nodes.4_sub[which( g[nodes.4_sub[,1]]==k & g[nodes.4_sub[,3]]==j),])))
+          nodes.5.list=c(nodes.5.list,list(rbind(nodes.5_sub[which( g[nodes.5_sub[,2]]==j & g[nodes.5_sub[,3]]==k),],
+                                                 nodes.5_sub[which( g[nodes.5_sub[,2]]==k & g[nodes.5_sub[,3]]==j),],
+                                                 nodes.6_sub[which( g[nodes.6_sub[,1]]==j & g[nodes.6_sub[,4]]==k),],
+                                                 nodes.6_sub[which( g[nodes.6_sub[,1]]==k & g[nodes.6_sub[,4]]==j),])))
+        }
       }
     }
   }
-  
+
   return(c(nodes.1.list,nodes.2.list,nodes.3.list,nodes.4.list,nodes.5.list))
 }
-
 
 # make the estimated error covariance matrix positive definite
 # by zerong out negative eigenvalues
@@ -153,19 +145,21 @@ make.positive.var <- function(V.test)
 # for a specific node, returns a list of length 6
 # where each item is residual products involving that specific node for each dyad
 # the fifth and sixth item in the list will be combined later
-cross.prod.one=function(resCrossProd,nodeSetExch,node.ind){
-  ans=vector("list", 6) 
-  ans[[1]]=resCrossProd[[1]][c(which(nodeSetExch[[1]][,1]==node.ind),which(nodeSetExch[[1]][,2]==node.ind))]
-  ans[[2]]=resCrossProd[[2]][which(nodeSetExch[[2]][,1]==node.ind)]
-  ans[[3]]=resCrossProd[[3]][which(nodeSetExch[[3]][,1]==node.ind)]
-  ans[[4]]=resCrossProd[[4]][which(nodeSetExch[[4]][,2]==node.ind)]
-  ans[[5]]=resCrossProd[[5]][which(nodeSetExch[[5]][,1]==node.ind)]
-  ans[[6]]=resCrossProd[[6]][which(nodeSetExch[[6]][,2]==node.ind)]
-  return(ans)
-}
+# cross.prod.one=function(resCrossProd,nodeSetExch,node.ind){
+#   ans=vector("list", 6) 
+#   ans[[1]]=resCrossProd[[1]][c(which(nodeSetExch[[1]][,1]==node.ind),which(nodeSetExch[[1]][,2]==node.ind))]
+#   ans[[2]]=resCrossProd[[2]][c(which(nodeSetExch[[2]][,1]==node.ind),which(nodeSetExch[[2]][,2]==node.ind))]
+#   ans[[3]]=resCrossProd[[3]][which(nodeSetExch[[3]][,1]==node.ind)]
+#   ans[[4]]=resCrossProd[[4]][which(nodeSetExch[[4]][,2]==node.ind)]
+#   ans[[5]]=resCrossProd[[5]][which(nodeSetExch[[5]][,1]==node.ind)]
+#   ans[[6]]=resCrossProd[[6]][which(nodeSetExch[[6]][,2]==node.ind)]
+#   return(ans)
+# }
 
 #get ks statistic without calculating p-value etc.
 get_ks_stat_manual=function(x,y){
+  #x=quantile(x,seq(0.01,0.99,0.01))
+  #y=quantile(y,seq(0.01,0.99,0.01))
   n.x=length(x)
   n.y=length(y)
   w <- c(x, y)
@@ -180,14 +174,28 @@ get_avg_ks=Vectorize(function(i,j,resCrossProdInd,get_ks_stat_manual){
   if(i>j){
     ks.record=numeric(5)
     for (k in 1:4){
-      ks.record[k]=get_ks_stat_manual(resCrossProdInd[[i]][[k]],resCrossProdInd[[j]][[k]])
+      ks.record[k]=get_ks_stat_manual(resCrossProdInd[[k]][i,],resCrossProdInd[[k]][j,])
     }
-    ks.record[5]=get_ks_stat_manual(c(resCrossProdInd[[i]][[5]],resCrossProdInd[[i]][[6]]),c(resCrossProdInd[[j]][[5]],resCrossProdInd[[j]][[6]]))
+    ks.record[5]=get_ks_stat_manual(c(resCrossProdInd[[5]][i,],resCrossProdInd[[6]][i,]),c(resCrossProdInd[[5]][j,],resCrossProdInd[[6]][j,]))
     similarity.ks.mean=1-mean(ks.record)
     ans=similarity.ks.mean
   }
   return (ans)
 }, vectorize.args=c("i", "j"))
+
+# get_avg_ks=function(i,j,resCrossProdInd,get_ks_stat_manual){
+#   ans=0
+#   #if(i>j){
+#     ks.record=numeric(5)
+#     for (k in 1:4){
+#       ks.record[k]=get_ks_stat_manual(resCrossProdInd[[k]][i,],resCrossProdInd[[k]][j,])
+#     }
+#     ks.record[5]=get_ks_stat_manual(c(resCrossProdInd[[5]][i,],resCrossProdInd[[6]][i,]),c(resCrossProdInd[[5]][j,],resCrossProdInd[[6]][j,]))
+#     similarity.ks.mean=1-mean(ks.record)
+#     ans=similarity.ks.mean
+#   #}
+#   return (ans)
+# }
 
 #transform the similarity matrix into a similarity graph
 make.affinity <- function(S, n.neighboors=2) {
@@ -239,16 +247,41 @@ get_est_blocks=function(n,residuals,nodeSetExch6,K,normalized=F){
   toc()
   tic("get residuals products for each actor i")
   #get residuals products for each actor i
-  resCrossProdInd=vector("list", n) 
-  for (i in 1:n){
-    resCrossProdInd[[i]]=cross.prod.one(resCrossProd,nodeSetExch6,i)
+  resCrossProdInd=vector("list", 6) 
+  # resCrossProdInd[[1]]=matrix(NA,nrow=n,ncol=2*(n-1))
+  # resCrossProdInd[[2]]=matrix(NA,nrow=n,ncol=n-1)
+  # resCrossProdInd[[3]]=matrix(NA,nrow=n,ncol=(n-1)*(n-2)/2)
+  # resCrossProdInd[[4]]=matrix(NA,nrow=n,ncol=(n-1)*(n-2)/2)
+  # resCrossProdInd[[5]]=matrix(NA,nrow=n,ncol=(n-1)*(n-2)/2)
+  # resCrossProdInd[[6]]=matrix(NA,nrow=n,ncol=(n-1)*(n-2)/2)
+  quantile_prob_len=200
+  quantile_prob=seq(0.001,0.999,(0.999-0.001)/(quantile_prob_len-1))
+  resCrossProdInd[[1]]=matrix(NA,nrow=n,ncol=2*(n-1))
+  resCrossProdInd[[2]]=matrix(NA,nrow=n,ncol=n-1)
+  resCrossProdInd[[3]]=matrix(NA,nrow=n,ncol=quantile_prob_len)
+  resCrossProdInd[[4]]=matrix(NA,nrow=n,ncol=quantile_prob_len)
+  resCrossProdInd[[5]]=matrix(NA,nrow=n,ncol=quantile_prob_len)
+  resCrossProdInd[[6]]=matrix(NA,nrow=n,ncol=quantile_prob_len)
+  last_four_len=(n-1)*(n-2)/2
+  for (node.ind in 1:n){
+    last_four_indices=((node.ind-1)*last_four_len+1):((node.ind)*last_four_len)
+    resCrossProdInd[[1]][node.ind,]=resCrossProd[[1]][c(which(nodeSetExch6[[1]][,1]==node.ind),which(nodeSetExch6[[1]][,2]==node.ind))]
+    resCrossProdInd[[2]][node.ind,]=resCrossProd[[2]][c(which(nodeSetExch6[[2]][,1]==node.ind),which(nodeSetExch6[[2]][,2]==node.ind))]
+    resCrossProdInd[[3]][node.ind,]=quantile(resCrossProd[[3]][last_four_indices],quantile_prob)
+    resCrossProdInd[[4]][node.ind,]=quantile(resCrossProd[[4]][last_four_indices],quantile_prob)
+    resCrossProdInd[[5]][node.ind,]=quantile(resCrossProd[[5]][last_four_indices],quantile_prob)
+    resCrossProdInd[[6]][node.ind,]=quantile(resCrossProd[[6]][last_four_indices],quantile_prob)
   }
+  
   toc()
   tic("get similarity matrix")
   #cl <- makeCluster(1)
   #similarity.ks.mean=parSapply(cl,1:n,1:n,FUN=get_avg_ks,resCrossProdInd=resCrossProdInd,get_ks_stat_manual=get_ks_stat_manual)
   similarity.ks.mean=outer(1:n,1:n,FUN=get_avg_ks,resCrossProdInd=resCrossProdInd,get_ks_stat_manual=get_ks_stat_manual)
+  #similarity.ks.mean.vec=mapply(FUN=get_avg_ks,i=nodeSetExch6[[2]][,1],j=nodeSetExch6[[2]][,2],MoreArgs=list(resCrossProdInd=resCrossProdInd,get_ks_stat_manual=get_ks_stat_manual))
   #stopCluster(cl)
+  #similarity.ks.mean=matrix(0,nrow=n,ncol=n)
+  #similarity.ks.mean[nodeSetExch6[[2]][,c(1,2)]]=similarity.ks.mean.vec
   similarity.ks.mean=t(similarity.ks.mean)+similarity.ks.mean
   diag(similarity.ks.mean)=1
   toc()
